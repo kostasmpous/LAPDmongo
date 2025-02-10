@@ -1,183 +1,23 @@
+import concurrent.futures
 import os
-import random
 import certifi
 import pandas as pd
 from faker import Faker
 from pymongo import MongoClient
+import db_utils
 
 # MongoDB connection
 #connection_string = "mongodb+srv://kostasmpous:C1bLHNuvmSsmZH0U@lapd.t2ysg.mongodb.net/?retryWrites=true&w=majority&appName=Lapd"
 #client = MongoClient(connection_string,tlsCAFile=certifi.where())
 
 client = MongoClient("mongodb://localhost:27017/")
-
-NUM_OFFICERS = 5000
-officer_list = []
+db_utils.generate_officers()
 # Database instance
 db = client['lapd']
-#library to fake data for officers
-faker = Faker()
-#a dictionary to track how many upvotes an officer did
-officer_upvote_tracker = {}
-
 # Define JSON Schema for the collection
 collection_name = "reports"
 collection = db[collection_name]
 collection.drop()
-#generate random officers
-def generate_officers():
-    for _ in range(NUM_OFFICERS):
-        officer_name = faker.name()
-        officer_email = faker.email()
-        officer_badge_number = str(random.randint(10000, 99999))
-        officer_list.append({
-            "officer_name": officer_name,
-            "officer_email": officer_email,
-            "officer_badge_number": officer_badge_number,
-            "upvote_count": 0  # Track upvotes per officer
-        })
-
-
-def get_random_officer():
-    """Select an officer from the pre-generated list while ensuring they don't exceed 1000 upvotes."""
-    while True:
-        officer = random.choice(officer_list)  # Pick a random officer
-
-        # Unique identifier
-        officer_id = f"{officer['officer_name']}_{officer['officer_badge_number']}"
-
-        # Ensure officer has less than 1000 upvotes
-        if officer_upvote_tracker.get(officer_id, 0) < 1000:
-            # Increment officer's upvote count
-            officer_upvote_tracker[officer_id] = officer_upvote_tracker.get(officer_id, 0) + 1
-            return officer
-
-
-generate_officers()
-
-
-def generate_random_upvotes(force_upvote=False):
-    """Generate upvotes ensuring at least ⅓ of reports have upvotes and no officer exceeds 1000 upvotes."""
-    upvote_list = []
-
-    # 33% of reports should have at least one upvote
-    should_have_upvotes = force_upvote or (random.random() < 0.33)  # ⅓ probability
-
-    if should_have_upvotes:
-        num_upvotes = random.randint(1, 5)  # Between 1 to 5 upvotes per report
-
-        for _ in range(num_upvotes):
-            officer = get_random_officer()
-
-            upvote_list.append({
-                "officer_name": officer["officer_name"],
-                "officer_email": officer["officer_email"],
-                "officer_badge_number": officer["officer_badge_number"]
-            })
-
-    return {
-        "count": len(upvote_list),
-        "list": upvote_list
-    }
-
-
-def mapping_gender(gender):
-    if gender == 'F':
-        return 'Female'
-    elif gender == 'M':
-        return 'Male'
-    else:
-        return 'Unknown'
-
-def mapping_descent(desc):
-    match desc:
-        case "A":
-            return "Other Asian"
-        case "B":
-            return "Black"
-        case "C":
-            return "Chinese"
-        case "D":
-            return "Cambodian"
-        case "F":
-            return "Filipino"
-        case "G":
-            return "Guamanian"
-        case "H":
-            return "Hispanic/Latin/Mexican"
-        case "I":
-            return "American Indian/Alaskan Native"
-        case "J":
-            return "Japanese"
-        case "K":
-            return "Korean"
-        case "L":
-            return "Laotian"
-        case "O":
-            return "Other"
-        case "P":
-            return "Pacific Islander"
-        case "S":
-            return "Samoan"
-        case "U":
-            return "Hawaiian"
-        case "V":
-            return "Vietnamese"
-        case "W":
-            return "White"
-        case "X":
-            return "Unknown"
-        case "Z":
-            return "Asian Indian"
-
-# Function to transform each row
-def transform_row(row):
-    return {
-        "dr_no": str(row["DR_NO"]),
-        "date_rptd": row["Date Rptd"],
-        "date_occ": row["DATE OCC"],
-        "time_occ": int(row["TIME OCC"]),
-        "area": int(row["AREA"]),
-        "area_name": row["AREA NAME"],
-        "rpt_dist_no": str(row["Rpt Dist No"]),
-
-        "crm_codes": {
-            "crm_cd": str(row["Crm Cd"]) if pd.notna(row["Crm Cd"]) else None,
-            "crm_cd_desc": row["Crm Cd Desc"],
-            "crm_cd_1": str(row["Crm Cd 1"]) if pd.notna(row["Crm Cd 1"]) else None,
-            "crm_cd_2": str(row["Crm Cd 2"]) if pd.notna(row["Crm Cd 2"]) else None,
-            "crm_cd_3": str(row["Crm Cd 3"]) if pd.notna(row["Crm Cd 3"]) else None,
-            "crm_cd_4": str(row["Crm Cd 4"]) if pd.notna(row["Crm Cd 4"]) else None,
-        },
-
-        "mocodes": str(row["Mocodes"]).split() if pd.notna(row["Mocodes"]) else [],
-
-        "victim": {
-            "vict_age": int(row["Vict Age"]) if pd.notna(row["Vict Age"]) else "",
-            "vict_sex": mapping_gender(row["Vict Sex"])  if pd.notna(row["Vict Sex"]) else "",
-            "vict_descent": mapping_descent(row["Vict Descent"]) if pd.notna(row["Vict Descent"]) else ""
-        },
-
-        "premis": {
-            "premis_cd": str(row["Premis Cd"]) if pd.notna(row["Premis Cd"]) else None,
-            "premis_desc": row["Premis Desc"]
-        },
-
-        "weapon": {
-            "weapon_used_cd": str(row["Weapon Used Cd"]) if pd.notna(row["Weapon Used Cd"]) else "",
-            "weapon_desc": str(row["Weapon Desc"]) if pd.notna(row["Weapon Desc"]) else ""  # FIX: Replace None with ""
-        },
-
-        "location_info": {
-            "location": row["LOCATION"],
-            "lat": float(row["LAT"]) if pd.notna(row["LAT"]) else None,
-            "lon": float(row["LON"]) if pd.notna(row["LON"]) else None
-        },
-
-        "status": row["Status"],
-        "status_desc": row["Status Desc"],
-        "upvotes": generate_random_upvotes()
-    }
 
 try:
     db.create_collection(collection_name, validator={
@@ -289,36 +129,86 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 CSV_FILE_PATH = os.path.join(BASE_DIR, "../files/cd.csv")
 
 
-# Function to load CSV and insert data into MongoDB
-def load_csv_to_mongodb():
+def transform_row(row):
+    """Convert row into MongoDB-compatible format."""
+    return {
+        "dr_no": str(row["DR_NO"]),
+        "date_rptd": row["Date Rptd"],
+        "date_occ": row["DATE OCC"],
+        "time_occ": int(row["TIME OCC"]),
+        "area": int(row["AREA"]),
+        "area_name": row["AREA NAME"],
+        "rpt_dist_no": str(row["Rpt Dist No"]),
+
+        "crm_codes": {
+            "crm_cd": str(row["Crm Cd"]) if pd.notna(row["Crm Cd"]) else "",
+            "crm_cd_desc": row["Crm Cd Desc"],
+            "crm_cd_1": str(row["Crm Cd 1"]) if pd.notna(row["Crm Cd 1"]) else "",
+            "crm_cd_2": str(row["Crm Cd 2"]) if pd.notna(row["Crm Cd 2"]) else "",
+            "crm_cd_3": str(row["Crm Cd 3"]) if pd.notna(row["Crm Cd 3"]) else "",
+            "crm_cd_4": str(row["Crm Cd 4"]) if pd.notna(row["Crm Cd 4"]) else "",
+        },
+
+        "mocodes": row["Mocodes"].split() if pd.notna(row["Mocodes"]) else [],
+
+        "victim": {
+            "vict_age": int(row["Vict Age"]) if pd.notna(row["Vict Age"]) else None,
+            "vict_sex": db_utils.mapping_gender(row["Vict Sex"]),
+            "vict_descent": db_utils.mapping_descent(row["Vict Descent"])
+        },
+
+        "premis": {
+            "premis_cd": str(row["Premis Cd"]) if pd.notna(row["Premis Cd"]) else "",
+            "premis_desc": str(row["Premis Desc"]) if pd.notna(row["Premis Desc"]) else ""
+        },
+
+        "weapon": {
+            "weapon_used_cd": str(row["Weapon Used Cd"]) if pd.notna(row["Weapon Used Cd"]) else "",
+            "weapon_desc": str(row["Weapon Desc"]) if pd.notna(row["Weapon Desc"]) else ""
+        },
+
+        "location_info": {
+            "location": row["LOCATION"],
+            "lat": float(row["LAT"]) if pd.notna(row["LAT"]) else None,
+            "lon": float(row["LON"]) if pd.notna(row["LON"]) else None
+        },
+
+        "status": row["Status"],
+        "status_desc": row["Status Desc"],
+        "upvotes": db_utils.generate_random_upvotes()
+    }
+
+
+def bulk_insert(data):
+    """Insert data into MongoDB in bulk."""
+    if data:
+        collection.insert_many(data)  # ✅ Faster batch insert
+
+
+def load_csv_to_mongodb(csv_file):
+    """Loads CSV data efficiently into MongoDB."""
+    CHUNK_SIZE = 10_000  # ✅ Read 10,000 rows at a time
+
     try:
-        # Read CSV file
-        df = pd.read_csv('/Users/kbousinis/PycharmProjects/lapdMongoDatabase/files/cd.csv')
+        collection.drop()  # 🗑️ Drop old collection to start fresh
+        print("🗑️ Collection dropped successfully.")
 
-        df["DR_NO"] = df["DR_NO"].astype(str)
-        df["Rpt Dist No"] = df["Rpt Dist No"].astype(str)
-        df["Crm Cd"] = df["Crm Cd"].astype(str)
-        df["Crm Cd 1"] = df["Crm Cd 1"].astype(str)
-        df["Crm Cd 2"] = df["Crm Cd 2"].astype(str)
-        df["Crm Cd 3"] = df["Crm Cd 3"].astype(str)
-        df["Crm Cd 4"] = df["Crm Cd 4"].astype(str)
-        df["Premis Cd"] = df["Premis Cd"].astype(str)
-        df["Weapon Used Cd"] = df["Weapon Used Cd"].astype(str)
-        # Convert all rows
-        json_data = [transform_row(row) for _, row in df.iterrows()]
+        with concurrent.futures.ThreadPoolExecutor(max_workers=4) as executor:  # ✅ Parallel processing
+            futures = []
 
-        #records = df.to_dict(orient="records")
+            for chunk in pd.read_csv(csv_file, chunksize=CHUNK_SIZE):
+                chunk = chunk.where(pd.notna(chunk), None)  # Convert NaN to None
+                json_data = [transform_row(row) for _, row in chunk.iterrows()]
+                futures.append(executor.submit(bulk_insert, json_data))  # ✅ Parallel insert
 
-        # Insert into MongoDB
-        collection = db[collection_name]
-        collection.insert_many(json_data)
+            concurrent.futures.wait(futures)  # ✅ Wait for all threads to complete
 
-        print(f"✅ Successfully inserted {len(json_data)} records into MongoDB!")
+        print("🎉 All data imported successfully!")
+
     except Exception as e:
         print(f"❌ Error occurred: {e}")
 
 
-# Call the function
+# Run the function
 if __name__ == "__main__":
-    load_csv_to_mongodb()
-
+    load_csv_to_mongodb("/Users/kbousinis/PycharmProjects/lapdMongoDatabase/files/cd.csv")

@@ -6,8 +6,11 @@ from faker import Faker
 from pymongo import MongoClient
 
 # MongoDB connection
-connection_string = "mongodb+srv://kostasmpous:C1bLHNuvmSsmZH0U@lapd.t2ysg.mongodb.net/?retryWrites=true&w=majority&appName=Lapd"
-client = MongoClient(connection_string,tlsCAFile=certifi.where())
+#connection_string = "mongodb+srv://kostasmpous:C1bLHNuvmSsmZH0U@lapd.t2ysg.mongodb.net/?retryWrites=true&w=majority&appName=Lapd"
+#client = MongoClient(connection_string,tlsCAFile=certifi.where())
+
+client = MongoClient("mongodb://localhost:27017/")
+
 NUM_OFFICERS = 5000
 officer_list = []
 # Database instance
@@ -290,7 +293,7 @@ CSV_FILE_PATH = os.path.join(BASE_DIR, "../files/cd.csv")
 def load_csv_to_mongodb():
     try:
         # Read CSV file
-        df = pd.read_csv('/Users/kbousinis/PycharmProjects/lapdMongoDatabase/files/cd.csv').head(100)
+        df = pd.read_csv('/Users/kbousinis/PycharmProjects/lapdMongoDatabase/files/cd.csv')
 
         df["DR_NO"] = df["DR_NO"].astype(str)
         df["Rpt Dist No"] = df["Rpt Dist No"].astype(str)

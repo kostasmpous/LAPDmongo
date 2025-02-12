@@ -1,11 +1,13 @@
-from fastapi import FastAPI
-from routers import users  # Import your routers
-from db import db  # Import the database instance
-
+from fastapi import FastAPI, Query
+from routers import users, reports  # Import your routers
+from pymongo import MongoClient
 app = FastAPI()
-
+app.include_router(reports.router)
 # Include routers
 app.include_router(users.router)
+client = MongoClient("mongodb://localhost:27017/", directConnection=True)
+db = client["lapd"]
+collection = db["reports"]
 
 @app.on_event("startup")
 async def startup_event():

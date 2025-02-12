@@ -4,13 +4,9 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="9fa1a995-bb05-4a61-8eee-dfec603d7da7" name="Changes" comment="break the classes in util on for the db class to popualte the database">
-      <change afterPath="$PROJECT_DIR$/queries.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/routers/reports.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/scripts/populate_db.py" afterDir="false" />
+    <list default="true" id="9fa1a995-bb05-4a61-8eee-dfec603d7da7" name="Changes" comment="organize the project folders and add all the queries">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/db.py" beforeDir="false" afterPath="$PROJECT_DIR$/db.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/main.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/routers/reports.py" beforeDir="false" afterPath="$PROJECT_DIR$/routers/reports.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -149,7 +145,7 @@
       <workItem from="1738194287730" duration="490000" />
       <workItem from="1738197804617" duration="1493000" />
       <workItem from="1738696308176" duration="762000" />
-      <workItem from="1739046567316" duration="65997000" />
+      <workItem from="1739046567316" duration="66202000" />
     </task>
     <task id="LOCAL-00001" summary="First push, including all the files started">
       <option name="closed" value="true" />
@@ -215,7 +211,15 @@
       <option name="project" value="LOCAL" />
       <updated>1739225837134</updated>
     </task>
-    <option name="localTasksCounter" value="9" />
+    <task id="LOCAL-00009" summary="organize the project folders and add all the queries">
+      <option name="closed" value="true" />
+      <created>1739404591584</created>
+      <option name="number" value="00009" />
+      <option name="presentableId" value="LOCAL-00009" />
+      <option name="project" value="LOCAL" />
+      <updated>1739404591584</updated>
+    </task>
+    <option name="localTasksCounter" value="10" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -236,7 +240,8 @@
     <MESSAGE value="First push, including all the files started" />
     <MESSAGE value="push generate data" />
     <MESSAGE value="break the classes in util on for the db class to popualte the database" />
-    <option name="LAST_COMMIT_MESSAGE" value="break the classes in util on for the db class to popualte the database" />
+    <MESSAGE value="organize the project folders and add all the queries" />
+    <option name="LAST_COMMIT_MESSAGE" value="organize the project folders and add all the queries" />
   </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
     <SUITE FILE_PATH="coverage/lapdMongoDatabase$db.coverage" NAME="db Coverage Results" MODIFIED="1739387349836" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />

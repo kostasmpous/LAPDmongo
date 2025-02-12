@@ -1,14 +1,6 @@
-from datetime import datetime
-from http.client import HTTPException
-from fastapi import FastAPI, Query
-
 from db import collection
-from routers import users  # Import your routers
-from pymongo import MongoClient
-import certifi
 from fastapi import APIRouter, Query
 from datetime import datetime
-
 
 router = APIRouter(prefix="/reports", tags=["Reports"])
 

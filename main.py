@@ -1,10 +1,10 @@
 from fastapi import FastAPI, Query
-from routers import users, reports  # Import your routers
+from routers import reports, upvotes  # Import your routers
 from pymongo import MongoClient
-app = FastAPI()
+app = FastAPI(title="LAPD Report API")
 app.include_router(reports.router)
+app.include_router(upvotes.router)
 # Include routers
-app.include_router(users.router)
 client = MongoClient("mongodb://localhost:27017/", directConnection=True)
 db = client["lapd"]
 collection = db["reports"]

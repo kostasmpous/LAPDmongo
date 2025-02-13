@@ -1,6 +1,8 @@
-from db import collection
+from db import collection_reports
 from fastapi import APIRouter, Query
 from datetime import datetime
+
+from models.report_model import Report
 
 router = APIRouter(prefix="/reports", tags=["Reports"])
 
@@ -36,7 +38,7 @@ async def query1(start_time: str, end_time: str):
                 }
             }
         ]
-        results = list(collection.aggregate(pipeline))
+        results = list(collection_reports.aggregate(pipeline))
         return {"status": "success", "data": results}
 
     except Exception as e:
@@ -48,10 +50,6 @@ def query2(
         start_time: str = Query(..., description="Start of time range (e.g., 1200 for 12:00)"),
         end_time: str = Query(..., description="End of time range (e.g., 1800 for 18:00)")
 ):
-    """
-    Returns the total number of reports per day for a specific Crm Cd within a specified time range.
-    Results are sorted by date.
-    """
     try:
         # Validate time format (ensure it is four digits)
         if not (start_time.isdigit() and end_time.isdigit() and len(start_time) == 4 and len(end_time) == 4):
@@ -84,7 +82,7 @@ def query2(
         ]
 
         # Execute Query
-        results = list(collection.aggregate(pipeline))
+        results = list(collection_reports.aggregate(pipeline))
         return results
 
     except Exception as e:
@@ -102,14 +100,14 @@ def query3(
         pipeline = [
             {
                 "$match": {
-                    "date_occ": {"$regex": f"^{formatted_date}"}  # ✅ Match specific day
+                    "date_occ": {"$regex": f"^{formatted_date}"}  # Match specific day
                 }
             },
             {
-                "$unwind": "$crm_codes.crime_codes"  # ✅ Separate each crime code into a new document
+                "$unwind": "$crm_codes.crime_codes"  # Separate each crime code into a new document
             },
             {
-                "$group": {  # ✅ Count occurrences of each crime per area
+                "$group": {  # Count occurrences of each crime per area
                     "_id": {"area_name": "$area_name", "crime": "$crm_codes.crime_codes"},
                     "count": {"$sum": 1}
                 }
@@ -133,7 +131,7 @@ def query3(
         ]
 
         # Execute Query
-        results = list(collection.aggregate(pipeline))
+        results = list(collection_reports.aggregate(pipeline))
         return results
     except Exception as e:
         return {"status": "error", "message": str(e)}
@@ -176,7 +174,7 @@ def query4(start_time: str, end_time: str):
         ]
 
         # Execute Query
-        results = list(collection.aggregate(pipeline))
+        results = list(collection_reports.aggregate(pipeline))
         return results
     except Exception as e:
         return {"status": "error", "message": str(e)}
@@ -226,7 +224,7 @@ def query5():
             }
         ]
 
-        results = list(collection.aggregate(pipeline))
+        results = list(collection_reports.aggregate(pipeline))
         return results
     except Exception as e:
         return {"status": "error", "message": str(e)}
@@ -237,95 +235,37 @@ def query6(date:str):
         # Convert date string to datetime object
         specific_date = datetime.strptime(date, "%m/%d/%Y").strftime("%m/%d/%Y")
 
-        # Aggregation Pipeline
-        pipeline = [
-            {
-                "$match": {
-                    "date_occ": {"$regex": f"^{specific_date}"}   # ✅ Match specific date range
-                }
-            },
-            {
-                "$sort": {"upvotes.count": -1}  # ✅ Sort by upvotes (descending)
-            },
-            {
-                "$limit": 50  # ✅ Keep only the top 50 reports
-            },
-            {
-                "$project": {  # ✅ Select relevant fields
-                    "_id": 0,
-                    "dr_no": 1,
-                    "date_occ": 1,
-                    "area_name": 1,
-                    "crm_codes.crm_cd_desc": 1,
-                    "upvotes.count": 1
-                }
-            }
-        ]
-
+        reports = collection_reports.find(
+            {"date_occ": {"$regex": f"^{specific_date}"}},
+            {"_id": 0, "dr_no": 1, "date_occ": 1, "area_name": 1, "upvotes.count": 1}  # ✅ Select only necessary fields
+        ).sort("upvotes.count", -1).limit(50)
         # Execute Query
-        return list(collection.aggregate(pipeline))
+        results = [dict(report) for report in reports]
+        return {"date": date, "top_50_upvoted_reports": results}
     except Exception as e:
         return {"status": "error", "message": str(e)}
 
 
-@router.get("/Query7/")
-def query7():
-    try:
-        pipeline = [
-            {
-                "$unwind": "$upvotes.list"  # Separate each officer entry in upvotes.list
-            },
-            {
-                "$group": {  # Group by officer and count total upvotes
-                    "_id": {
-                        "officer_name": "$upvotes.list.officer_name",
-                        "officer_email": "$upvotes.list.officer_email",
-                        "officer_badge_number": "$upvotes.list.officer_badge_number"
-                    },
-                    "total_upvotes": {"$sum": 1}
-                }
-            },
-            {
-                "$sort": {"total_upvotes": -1}  # Sort by total upvotes (descending)
-            },
-            {
-                "$limit": 50  # Keep only the top 50 most upvoted officers
-            },
-            {
-                "$project": {  # Format output
-                    "_id": 0,
-                    "officer_name": "$_id.officer_name",
-                    "officer_email": "$_id.officer_email",
-                    "officer_badge_number": "$_id.officer_badge_number",
-                    "total_upvotes": 1
-                }
-            }
-        ]
-
-        results = list(collection.aggregate(pipeline))
-        return results
-    except Exception as e:
-        return {"status": "error", "message": str(e)}
 
 @router.get("/Query8/")
 def query8():
     try:
-        pipeline = [
+        pipeline = pipeline = [
             {
-                "$unwind": "$upvotes.list"  # Separate each officer entry in upvotes.list
+                "$unwind": "$upvotes.list"  # ✅ Unwind upvotes to process each officer separately
             },
             {
-                "$group": {  # Group by officer and collect unique areas
+                "$group": {  # ✅ Group by officer and collect unique areas
                     "_id": {
                         "officer_name": "$upvotes.list.officer_name",
                         "officer_email": "$upvotes.list.officer_email",
                         "officer_badge_number": "$upvotes.list.officer_badge_number"
                     },
-                    "distinct_areas": {"$addToSet": "$area_name"}  # Collect distinct areas
+                    "distinct_areas": {"$addToSet": "$area_name"}  # ✅ Collect unique areas
                 }
             },
             {
-                "$project": {  # Count the number of distinct areas
+                "$project": {  # ✅ Count the number of distinct areas
                     "_id": 0,
                     "officer_name": "$_id.officer_name",
                     "officer_email": "$_id.officer_email",
@@ -335,14 +275,14 @@ def query8():
                 }
             },
             {
-                "$sort": {"area_count": -1}  # Sort by number of distinct areas (descending)
+                "$sort": {"area_count": -1}  # ✅ Sort by number of unique areas in descending order
             },
             {
-                "$limit": 50  # Keep only the top 50 officers
+                "$limit": 50  # ✅ Limit results to top 50 officers
             }
         ]
 
-        results = list(collection.aggregate(pipeline))
+        results = list(collection_reports.aggregate(pipeline))
         return results
     except Exception as e:
         return {"status": "error", "message": str(e)}
@@ -391,7 +331,7 @@ def query9():
             }
         ]
 
-        results = list(collection.aggregate(pipeline))
+        results = list(collection_reports.aggregate(pipeline))
         return results
     except Exception as e:
         return {"status": "error", "message": str(e)}
@@ -419,8 +359,15 @@ def query10(officer_name : str):
                 }
             }
         ]
-        results = list(collection.aggregate(pipeline))
+        results = list(collection_reports.aggregate(pipeline))
         return results
     except Exception as e:
         return {"status": "error", "message": str(e)}
 
+@router.post("/add/")
+async def add_report(report : Report):
+    report_data = report.model_dump()
+    result = collection_reports.insert_one(report_data)
+    if not result.inserted_id:
+        return {"status": "error", "message": "Failed to insert report."}
+    return {"status": "ok", "message": "Report inserted successfully.","Dr_no": report.dr_no}

@@ -1,20 +1,17 @@
 from bson import ObjectId
+from idna.idnadata import scripts
 from pymongo import MongoClient, UpdateOne
 from datetime import datetime, timedelta
 import pandas as pd
 import random
 from faker import Faker
-
 from db import collection_officers, collection_upvotes, collection_reports
 from models.officer_model import PoliceOfficer
 from models.upvote_model import Upvote
+from scripts import global_constant
 
 faker = Faker()
-NUM_OFFICERS = 5000
-# List of police ranks
-RANKS = ["Officer", "Detective", "Sergeant", "Lieutenant", "Captain", "Deputy Chief", "Chief of Police"]
-# List of police departments
-DEPARTMENTS = ["Homicide", "Narcotics", "Cyber Crime", "Traffic Control", "Patrol", "Forensics", "Special Ops"]
+
 officer_list = []
 officer_collection_list=[]
 upvotes_collection_list=[]
@@ -76,7 +73,7 @@ def random_date_joined():
     start_date = datetime.now() - timedelta(days=30 * 365)  # 30 years ago
     random_date = faker.date_between(start_date=start_date, end_date="today")
 
-    # ✅ Convert `datetime.date` to `datetime.datetime`
+    # Convert `datetime.date` to `datetime.datetime`
     return datetime.combine(random_date, datetime.min.time())  # Converts date to datetime
 
 
@@ -100,7 +97,7 @@ def generate_officers():
     """Generate random officer data and insert them in bulk into MongoDB."""
     officer_collection_list = []  # Clear this to avoid memory carryover
 
-    for _ in range(NUM_OFFICERS):
+    for _ in range(global_constant.NUM_OFFICERS):
         officer_name = faker.name()
         officer_email = faker.email()
         officer_badge_number = str(random.randint(10000, 99999))
@@ -109,8 +106,8 @@ def generate_officers():
             "badge_number": officer_badge_number,
             "name": officer_name,
             "email": officer_email,
-            "rank": random.choice(RANKS),
-            "department": random.choice(DEPARTMENTS),
+            "rank": random.choice(global_constant.RANKS),
+            "department": random.choice(global_constant.DEPARTMENTS),
             "date_joined": random_date_joined(),
             "active": random.choice([True, False])
         }
@@ -142,7 +139,7 @@ def get_random_officer(officer_list):
 import random
 from datetime import datetime
 from pymongo import UpdateOne
-from bson import ObjectId  # ✅ Import to generate unique MongoDB ObjectIds
+from bson import ObjectId  #  Import to generate unique MongoDB ObjectIds
 
 
 def generate_random_upvotes_bulk(report_ids, officer_list, force_upvote=False, batch_size=10000):
@@ -151,7 +148,7 @@ def generate_random_upvotes_bulk(report_ids, officer_list, force_upvote=False, b
     upvotes_collection_list = []  # Stores bulk upvote data
     operations = []  # Stores MongoDB bulk update operations
 
-    # ✅ Preload officers into a list for fast random selection
+    # Preload officers into a list for fast random selection
     officer_pool = [
         {
             "name": officer["name"],
@@ -162,16 +159,16 @@ def generate_random_upvotes_bulk(report_ids, officer_list, force_upvote=False, b
     ]
 
     for report_id in report_ids:
-        should_have_upvotes = force_upvote or (random.random() < 0.20)  # ✅ Precompute probability once
+        should_have_upvotes = force_upvote or (random.random() < 0.20)  # Precompute probability once
 
         if should_have_upvotes:
-            num_upvotes = random.randint(1, 3)  # ✅ Precompute random number
+            num_upvotes = random.randint(1, 3)  #  Precompute random number
 
             for _ in range(num_upvotes):
-                officer = random.choice(officer_pool)  # ✅ Faster than calling `get_random_officer()`
+                officer = random.choice(officer_pool)  # Faster than calling `get_random_officer()`
 
                 upvote_data = {
-                    "_id": ObjectId(),  # ✅ Ensure a unique MongoDB ObjectId
+                    "_id": ObjectId(),  # Ensure a unique MongoDB ObjectId
                     "officer_name": officer["name"],
                     "officer_email": officer["email"],
                     "officer_badge_number": officer["badge_number"],
@@ -181,80 +178,46 @@ def generate_random_upvotes_bulk(report_ids, officer_list, force_upvote=False, b
 
                 upvotes_collection_list.append(upvote_data)
 
-                # ✅ Use `$addToSet` to prevent duplicate upvotes
+                # Use `$addToSet` to prevent duplicate upvotes
                 operations.append(UpdateOne(
                     {"dr_no": report_id},
                     {
                         "$inc": {"upvotes.count": 1},
-                        "$addToSet": {"upvotes.list": upvote_data},  # ✅ Prevents duplicate upvotes
-                        "$setOnInsert": {"dr_no": report_id}  # ✅ Ensures report exists
+                        "$addToSet": {"upvotes.list": upvote_data},  #  Prevents duplicate upvotes
+                        "$setOnInsert": {"dr_no": report_id}  #  Ensures report exists
                     },
                     upsert=True
                 ))
 
-        # ✅ Insert & update in large batches to optimize performance
+        # Insert & update in large batches to optimize performance
         if len(upvotes_collection_list) >= batch_size:
             try:
                 collection_upvotes.insert_many(upvotes_collection_list, ordered=False)
-                print(f"✅ Inserted {len(upvotes_collection_list)} upvotes successfully!")
+                print(f"Inserted {len(upvotes_collection_list)} upvotes successfully!")
             except Exception as e:
-                print(f"⚠️ Bulk insert error: {e}")
+                print(f"Bulk insert error: {e}")
             upvotes_collection_list.clear()  # Free memory
 
         if len(operations) >= batch_size:
             try:
                 collection_reports.bulk_write(operations, ordered=False)
-                print(f"✅ Updated {len(operations)} reports with upvotes!")
+                print(f"Updated {len(operations)} reports with upvotes!")
             except Exception as e:
                 print(f"⚠️ Bulk update error: {e}")
             operations.clear()  # Free memory
 
-    # ✅ Final batch insert & update (if anything remains)
+    # Final batch insert & update (if anything remains)
     if upvotes_collection_list:
         try:
             collection_upvotes.insert_many(upvotes_collection_list, ordered=False)
-            print(f"✅ Inserted {len(upvotes_collection_list)} upvotes successfully!")
+            print(f" Inserted {len(upvotes_collection_list)} upvotes successfully!")
         except Exception as e:
             print(f"⚠️ Bulk insert error: {e}")
 
     if operations:
         try:
             collection_reports.bulk_write(operations, ordered=False)
-            print(f"✅ Updated {len(operations)} reports with upvotes!")
+            print(f"Updated {len(operations)} reports with upvotes!")
         except Exception as e:
-            print(f"⚠️ Bulk update error: {e}")
-
-
-def add_upvotes_to_reports(upvotes_mapping):
-    """
-    Safely updates reports in bulk to add upvotes without replacing existing content.
-
-    Args:
-        upvotes_mapping (dict): {report_id: [list of upvote dictionaries]}
-    """
-    operations = []
-
-    for report_id, upvotes in upvotes_mapping.items():
-        clean_upvotes = []  # ✅ Remove unnecessary fields like `report_id` and `_id`
-
-        for upvote in upvotes:
-            clean_upvotes.append({
-                "officer_name": upvote["officer_name"],
-                "officer_email": upvote["officer_email"],
-                "officer_badge_number": upvote["officer_badge_number"],
-                "upvote_time": upvote["upvote_time"]  # ✅ Keep timestamp
-            })
-
-        operations.append(UpdateOne(
-            {"dr_no": report_id},  # ✅ Find the correct report
-            {
-                "$inc": {"upvotes.count": len(clean_upvotes)},  # ✅ Increment count
-                "$push": {"upvotes.list": {"$each": clean_upvotes}}  # ✅ Append upvotes
-            },
-            upsert=False  # ❌ Prevent creating new reports if missing
-        ))
-
-    if operations:
-        collection_reports.bulk_write(operations)  # ✅ Perform bulk update efficiently
-        print(f"✅ {len(operations)} upvote records updated in reports collection.")
+            print(f" Bulk update error: {e}")
 

@@ -8,7 +8,6 @@ from models.upvote_model import Upvote
 
 router = APIRouter(prefix="/upvotes", tags=["Upvotes"])
 
-
 @router.get("/Query7/")
 def query7():
     try:
@@ -42,7 +41,7 @@ async def upvote(upvote: Upvote):
     if existing_vote:
         raise HTTPException(status_code=400, detail="Officer has already voted for this report.")
 
-    # ✅ Create the upvote document
+    #Create the upvote document
     upvote_data = {
         "_id": ObjectId(),  # Ensure unique ID
         "officer_name": upvote.officer_name,
@@ -53,10 +52,10 @@ async def upvote(upvote: Upvote):
     }
 
     try:
-        # ✅ Insert upvote into `upvotes` collection (async)
+        # Insert upvote into `upvotes` collection
         collection_upvotes.insert_one(upvote_data)
 
-        # ✅ Update the report's upvote count (async)
+        # Update the report's upvote count
         collection_reports.update_one(
             {"dr_no": upvote.report_id},
             {

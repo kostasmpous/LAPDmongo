@@ -9,7 +9,6 @@ This project:
 ✔ **Stores LAPD Crime Reports** 📂  
 ✔ **Manages Police Officer Data & Upvotes** 👮  
 ✔ **Provides REST API for Crime Data Queries** 🌐  
-✔ **Ensures Security with JWT Authentication** 🔐  
 ✔ **Optimizes Queries with MongoDB Indexing** 🚀  
 
 ---

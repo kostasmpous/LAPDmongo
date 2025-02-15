@@ -18,9 +18,8 @@ This project:
 |--------------|------------|
 | **Database** | MongoDB |
 | **Backend API** | FastAPI (Python) |
-| **Authentication** | OAuth2 & JWT |
 | **Data Generation** | Faker |
-| **Deployment** | Docker (Optional) |
+
 
 ---
 
@@ -28,7 +27,6 @@ This project:
 ✅ **Crime Data Storage**: Stores crime reports, including crime codes, time, location, and victim details.  
 ✅ **Police Officer Upvotes**: Officers can upvote reports to indicate priority.  
 ✅ **RESTful API**: Supports crime report retrieval, aggregation, and statistical queries.  
-✅ **Role-Based Access Control**: Admins vs. Officers.  
 ✅ **Indexing for Performance**: Optimized queries using MongoDB indexes.  
 
 ---
@@ -174,10 +172,3 @@ API is now running at: **`http://127.0.0.1:8000/docs`** 🎉
 - **University of Athens, Department of Informatics & Telecommunications** 🎓
 
 ---
-
-## 📌 License
-This project is licensed under the **MIT License**.
-
----
-
-🔥 **Now your GitHub project has a fully structured README!** 🚀

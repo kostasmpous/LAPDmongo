@@ -22,17 +22,26 @@ def query7():
                     "total_upvotes": {"$sum": 1}  # Count total upvotes per officer
                 }
             },
+            {
+                "$project": { #Format results
+                    "_id": 0,
+                    "officer_name": "$_id.officer_name",
+                    "officer_email": "$_id.officer_email",
+                    "officer_badge_number": "$_id.officer_badge_number",
+                    "total_upvotes": "$total_upvotes"
+                }
+            },
             {"$sort": {"total_upvotes": -1}},  # Sort by highest upvotes
             {"$limit": 50}  # Limit to top 50 officers
         ]
         results = list(collection_upvotes.aggregate(pipeline))
-        return results
+        return {"status":"success","most_active_officers":results}
     except Exception as e:
         return {"status": "error", "message": str(e)}
 
 @router.post("/add")
 async def upvote(upvote: Upvote):
-    # ✅ Check if this officer has already upvoted this report (async)
+    # Check if this officer has already upvoted this report (async)
     existing_vote = collection_upvotes.find_one({
         "officer_badge_number": upvote.officer_badge_number,
         "report_id": upvote.report_id

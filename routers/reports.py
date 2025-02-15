@@ -39,7 +39,10 @@ async def query1(start_time: str, end_time: str):
             }
         ]
         results = list(collection_reports.aggregate(pipeline))
-        return {"status": "success", "data": results}
+        #Format results
+        starttm = start_time[:2] + ":" + start_time[2:4]
+        endtm = end_time[:2] + ":" + end_time[2:4]
+        return {"status": "success","Start_time":starttm,"End_time":endtm, "Number_of_reports_per_crmcd": results}
 
     except Exception as e:
         return {"status": "error", "message": str(e)}
@@ -83,7 +86,9 @@ def query2(
 
         # Execute Query
         results = list(collection_reports.aggregate(pipeline))
-        return results
+        starttm = start_time[:2] + ":" + start_time[2:4]
+        endtm = end_time[:2] + ":" + end_time[2:4]
+        return {"status": "success","crm_cd":crm_cd,"start_time":starttm,"end_time":endtm,f"Number of reports per day for {crm_cd}": results}
 
     except Exception as e:
         return {"status": "error", "message": str(e)}
@@ -113,16 +118,16 @@ def query3(
                 }
             },
             {
-                "$sort": {"count": -1}  # ✅ Sort by frequency (descending)
+                "$sort": {"count": -1}  # Sort by frequency (descending)
             },
             {
-                "$group": {  # ✅ Group by area and keep top 3 crimes
+                "$group": {  # Group by area and keep top 3 crimes
                     "_id": "$_id.area_name",
-                    "top_crimes": {"$push": {"crime": "$_id.crime", "count": "$count"}}
+                    "top_crimes": {"$push": {"crime_code": "$_id.crime", "count": "$count"}}
                 }
             },
             {
-                "$project": {  # ✅ Limit to top 3 crimes per area
+                "$project": {  # Limit to top 3 crimes per area
                     "area_name": "$_id",
                     "top_crimes": {"$slice": ["$top_crimes", 3]},
                     "_id": 0
@@ -132,7 +137,7 @@ def query3(
 
         # Execute Query
         results = list(collection_reports.aggregate(pipeline))
-        return results
+        return {"status":"success","date":date,"Three_most_common_crimes": results}
     except Exception as e:
         return {"status": "error", "message": str(e)}
 
@@ -175,7 +180,9 @@ def query4(start_time: str, end_time: str):
 
         # Execute Query
         results = list(collection_reports.aggregate(pipeline))
-        return results
+        starttm = start_time[:2] + ":" + start_time[2:4]
+        endtm = end_time[:2] + ":" + end_time[2:4]
+        return {"status":"success","start_time":starttm,"end_time":endtm,"Two_least_common_crimes":results}
     except Exception as e:
         return {"status": "error", "message": str(e)}
 
@@ -225,7 +232,7 @@ def query5():
         ]
 
         results = list(collection_reports.aggregate(pipeline))
-        return results
+        return {"status":"success","Weapons_used_for_same_crime":results}
     except Exception as e:
         return {"status": "error", "message": str(e)}
 
@@ -237,11 +244,11 @@ def query6(date:str):
 
         reports = collection_reports.find(
             {"date_occ": {"$regex": f"^{specific_date}"}},
-            {"_id": 0, "dr_no": 1, "date_occ": 1, "area_name": 1, "upvotes.count": 1}  # ✅ Select only necessary fields
+            {"_id": 0, "dr_no": 1, "date_occ": 1, "area_name": 1, "upvotes.count": 1}  # Select only necessary fields
         ).sort("upvotes.count", -1).limit(50)
         # Execute Query
         results = [dict(report) for report in reports]
-        return {"date": date, "top_50_upvoted_reports": results}
+        return {"status":"success","date": date, "top_50_upvoted_reports": results}
     except Exception as e:
         return {"status": "error", "message": str(e)}
 
@@ -252,20 +259,20 @@ def query8():
     try:
         pipeline = pipeline = [
             {
-                "$unwind": "$upvotes.list"  # ✅ Unwind upvotes to process each officer separately
+                "$unwind": "$upvotes.list"  # Unwind upvotes to process each officer separately
             },
             {
-                "$group": {  # ✅ Group by officer and collect unique areas
+                "$group": {  # Group by officer and collect unique areas
                     "_id": {
                         "officer_name": "$upvotes.list.officer_name",
                         "officer_email": "$upvotes.list.officer_email",
                         "officer_badge_number": "$upvotes.list.officer_badge_number"
                     },
-                    "distinct_areas": {"$addToSet": "$area_name"}  # ✅ Collect unique areas
+                    "distinct_areas": {"$addToSet": "$area_name"}  #  Collect unique areas
                 }
             },
             {
-                "$project": {  # ✅ Count the number of distinct areas
+                "$project": {  # Count the number of distinct areas
                     "_id": 0,
                     "officer_name": "$_id.officer_name",
                     "officer_email": "$_id.officer_email",
@@ -275,15 +282,15 @@ def query8():
                 }
             },
             {
-                "$sort": {"area_count": -1}  # ✅ Sort by number of unique areas in descending order
+                "$sort": {"area_count": -1}  # Sort by number of unique areas in descending order
             },
             {
-                "$limit": 50  # ✅ Limit results to top 50 officers
+                "$limit": 50  # Limit results to top 50 officers
             }
         ]
 
         results = list(collection_reports.aggregate(pipeline))
-        return results
+        return {"status":"success","Top_officers_according_to_total_areas":results}
     except Exception as e:
         return {"status": "error", "message": str(e)}
 
@@ -332,7 +339,7 @@ def query9():
         ]
 
         results = list(collection_reports.aggregate(pipeline))
-        return results
+        return {"status":"success","Report_with_same_email_different_badge":results}
     except Exception as e:
         return {"status": "error", "message": str(e)}
 
@@ -360,7 +367,7 @@ def query10(officer_name : str):
             }
         ]
         results = list(collection_reports.aggregate(pipeline))
-        return results
+        return {"status":"success","Areas_voted":results}
     except Exception as e:
         return {"status": "error", "message": str(e)}
 

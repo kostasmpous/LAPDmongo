@@ -109,39 +109,6 @@ The database consists of the following **collections**:
 
 ---
 
-## 📌 API Endpoints
-### 🔑 Authentication
-| Method | Endpoint | Description |
-|--------|------------|------------------|
-| `POST` | `/token/` | Authenticate and get JWT token |
-
-### 🚔 Crime Reports
-| Method | Endpoint | Description |
-|--------|------------|------------------|
-| `GET` | `/reports/` | Retrieve all reports |
-| `POST` | `/reports/` | Insert a new crime report |
-| `GET` | `/reports/crime-count/` | Total number of reports per crime code in a time range |
-| `GET` | `/reports/daily-crime/` | Total reports per day for a crime code |
-| `GET` | `/reports/common-crimes/` | Three most common crimes per area |
-| `GET` | `/reports/least-common-crimes/` | Two least common crimes in a time range |
-| `GET` | `/reports/weapon-usage/` | Weapons used for the same crime in multiple areas |
-| `GET` | `/reports/top-upvoted/` | 50 most upvoted reports for a day |
-
-### 👮 Police Officers
-| Method | Endpoint | Description |
-|--------|------------|------------------|
-| `POST` | `/officer/` | Register a new officer |
-| `GET` | `/officer/search/` | Search officers by name |
-| `GET` | `/officer/top-active/` | Top 50 most active officers by upvotes |
-| `GET` | `/officer/top-areas/` | Top 50 officers by upvotes across multiple areas |
-
-### 👍 Upvotes
-| Method | Endpoint | Description |
-|--------|------------|------------------|
-| `POST` | `/upvote/` | Cast an upvote for a report |
-
----
-
 ## 📌 Installation & Setup
 ### 1️⃣ Clone Repository
 ```sh
